@@ -1,41 +1,3 @@
-<img src="img/introduction.png" width="100%">
-
-<p align="center">
-  Infos: 
-  <a href="https://multimediaeval.github.io/editions/2020/tasks/medico/">MediaEval Benchmark Website</a> |
-  <a href="https://www.eigen.no/MediaEval20_paper_29.pdf">Paper Link</a> |
-  <a href="https://youtu.be/ukJKJosu1f8">Presentation Video on YouTube</a>
-</p>
-
-<p align="center">
-  IIAI-Med Team:
-  <a href="https://scholar.google.com/citations?user=oaxKYKUAAAAJ&hl=en">Ge-Peng Ji</a> |
-  <a href="https://dpfan.net/">Deng-Ping Fan*</a> |
-  <a href="https://taozh2017.github.io/">Tao Zhou</a> |
-  <a href="https://www.researchgate.net/profile/Geng_Chen13">Geng Chen</a> |
-  <a href="http://hzfu.github.io/">Huazhu Fu</a> |
-  <a href="http://www.inceptioniai.org/">Ling Shao</a>
-</p>
-
-## :boom: News :boom:
-
-- [2020/12/14] Congratulations on the success of the workshop! The IIAI-Med team **wins the best precision scores (90.1%) 
-and ranks 7-th in the final competition**. 
-
-- [2020/12/14] Note that many works in this workshop adopt ours method as the baseline 
-and achieve satisfactory results, such as 
-[HCMUS at Medico Automatic Polyp Segmentation Task 2020: PraNet and ResUnet++ for Polyps Segmentation](https://eigen.no/MediaEval20_paper_47.pdf) 
-and [HCMUS-Juniors 2020 at Medico Task in MediaEval 2020: Refined Deep Neural Network and U-Net for Polyps Segmentation](https://eigen.no/MediaEval20_paper_20.pdf),
-verifying the high efficiency of our model.
-
-- [2020/12/12] Training code is released! Please enjoy it!
-
-- [2020/12/11] The preliminary proceedings for the workshop has now been released: https://www.eigen.no/.
-
-- [2020/12/09] Traning code will be update before the virtual conference.
-
-- [2020/12/07] Testing dataset will be update after the release of official link by workshop organizer.
-
 ## 1. Brief Description
 
 In this paper, we present a novel deep neural network, termed Parallel Reverse Attention Network 
@@ -152,3 +114,30 @@ our original paper ([Project](https://link.springer.com/chapter/10.1007%2F978-3-
 [Paper](https://link.springer.com/chapter/10.1007%2F978-3-030-59725-2_26), 
 [Chinese Traslation](http://dpfan.net/wp-content/uploads/MICCAI20_PraNet_Chinese.pdf), and
 [Code](https://github.com/DengPingFan/PraNet)). For more questions, please feel free to contact me via gepengai.ji@gmail.com.
+
+# Fork Related Notes:
+
+## DockerFile for Easy Reproduction
+
+Creating the correct CUDA environment for Deep Learning is challenging.
+Docker containers should be used for these purposes.
+It is added in this fork.
+
+Instructions:
+
+```shell
+# Create the image
+docker build -t mediaeval-iiai-med:1.3.1 .
+
+# Create a container from image
+docker run \
+-v <absolute_path_to_repo>:/workspace \
+--name mediaeval-dev \
+--pull missing \
+--ipc host \
+--gpus all \
+mediaeval-iiai-med:1.3.1
+
+# Connect to Container
+docker exec -it mediaeval-dev bash
+```
