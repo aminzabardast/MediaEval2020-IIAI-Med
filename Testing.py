@@ -8,6 +8,9 @@ from utils.data import test_dataset
 import time
 
 
+TRAIN_ON_GPU = True
+
+
 parser = argparse.ArgumentParser()
 parser.add_argument('--testsize', type=int, default=352, help='testing size')
 parser.add_argument('--gpu_id', type=str, default='0', help='select gpu id')
@@ -19,7 +22,9 @@ opt = parser.parse_args()
 dataset_path = opt.test_path
 
 # set device for test
-if opt.gpu_id == '0':
+if not TRAIN_ON_GPU:
+    print('USE CPU')
+elif opt.gpu_id == '0':
     os.environ["CUDA_VISIBLE_DEVICES"] = "0"
     print('USE GPU 0')
 elif opt.gpu_id == '1':
@@ -27,9 +32,13 @@ elif opt.gpu_id == '1':
     print('USE GPU 1')
 
 # load the model
-model = PraNet(channel=32).cuda()
+if TRAIN_ON_GPU:
+    model = PraNet(channel=32).cuda()
+else:
+    model = PraNet(channel=32)
 model.load_state_dict(torch.load(opt.snapshot))
-model.cuda()
+if TRAIN_ON_GPU:
+    model.cuda()
 model.eval()
 
 # test
@@ -44,9 +53,10 @@ test_loader = test_dataset(dataset_path, dataset_path, opt.testsize)
 for i in range(test_loader.size):
     image, gt, name, image_for_post = test_loader.load_data()
     gt = np.asarray(gt, np.float32)
-    gt /= (gt.max() + 1e-8)
+    gt = gt / (gt.max() + 1e-8)
 
-    image = image.cuda()
+    if TRAIN_ON_GPU:
+        image = image.cuda()
     # Start time
     start_time = time.time()
     # Prediction

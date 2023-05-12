@@ -12,16 +12,19 @@ import logging
 import torch.backends.cudnn as cudnn
 
 
+TRAIN_ON_GPU = True
+
+
 # loss function from F3Net'AAAI'2020
 def structure_loss(pred, mask):
-    weit = 1 + 5 * torch.abs(F.avg_pool2d(mask, kernel_size=31, stride=1, padding=15) - mask)
-    wbce = F.binary_cross_entropy_with_logits(pred, mask, reduce='none')
+    weit = 1 + (5 * torch.abs(F.avg_pool2d(mask, kernel_size=31, stride=1, padding=15) - mask))
+    wbce = F.binary_cross_entropy_with_logits(pred, mask, reduce=None)
     wbce = (weit * wbce).sum(dim=(2, 3)) / weit.sum(dim=(2, 3))
 
     pred = torch.sigmoid(pred)
     inter = ((pred * mask) * weit).sum(dim=(2, 3))
     union = ((pred + mask) * weit).sum(dim=(2, 3))
-    wiou = 1 - (inter + 1) / (union - inter + 1)
+    wiou = 1 - ((inter + 1) / (union - inter + 1))
     return (wbce + wiou).mean()
 
 
@@ -35,8 +38,9 @@ def train(train_loader, model, optimizer, epoch, save_path, writer):
         for i, (images, gts) in enumerate(train_loader, start=1):
             optimizer.zero_grad()
 
-            images = images.cuda()
-            gts = gts.cuda()
+            if TRAIN_ON_GPU:
+                images = images.cuda()
+                gts = gts.cuda()
 
             preds = model(images)
             loss_init = structure_loss(preds[0], gts) + structure_loss(preds[1], gts) + structure_loss(preds[2], gts)
@@ -49,8 +53,8 @@ def train(train_loader, model, optimizer, epoch, save_path, writer):
             clip_gradient(optimizer, opt.clip)
             optimizer.step()
 
-            step += 1
-            epoch_step += 1
+            step = step + 1
+            epoch_step = epoch_step + 1
             loss_all += loss.data
 
             if i % 20 == 0 or i == total_step or i == 1:
@@ -105,15 +109,16 @@ def val(test_loader, model, epoch, save_path, writer):
         for i in range(test_loader.size):
             image, gt, name, img_for_post = test_loader.load_data()
             gt = np.asarray(gt, np.float32)
-            gt /= (gt.max() + 1e-8)
-            image = image.cuda()
+            gt = gt / (gt.max() + 1e-8)
+            if TRAIN_ON_GPU:
+                image = image.cuda()
 
             res = model(image)
 
             res = F.upsample(res[3], size=gt.shape, mode='bilinear', align_corners=False)
             res = res.sigmoid().data.cpu().numpy().squeeze()
             res = (res - res.min()) / (res.max() - res.min() + 1e-8)
-            mae_sum += np.sum(np.abs(res - gt)) * 1.0 / (gt.shape[0] * gt.shape[1])
+            mae_sum = mae_sum + np.sum(np.abs(res - gt)) * 1.0 / (gt.shape[0] * gt.shape[1])
         mae = mae_sum / test_loader.size
         writer.add_scalar('MAE', torch.tensor(mae), global_step=epoch)
         print('Epoch: {}, MAE: {}, bestMAE: {}, bestEpoch: {}.'.format(epoch, mae, best_mae, best_epoch))
@@ -132,6 +137,8 @@ def val(test_loader, model, epoch, save_path, writer):
 if __name__ == '__main__':
     import argparse
 
+    # For Debugging
+    # torch.autograd.set_detect_anomaly(True)
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', type=int, default=100, help='epoch number')
     parser.add_argument('--lr', type=float, default=1e-4, help='learning rate')
@@ -141,7 +148,7 @@ if __name__ == '__main__':
     parser.add_argument('--decay_rate', type=float, default=0.1, help='decay rate of learning rate')
     parser.add_argument('--decay_epoch', type=int, default=50, help='every n epochs decay learning rate')
     parser.add_argument('--load', type=str, default=None, help='train from checkpoints')
-    parser.add_argument('--gpu_id', type=str, default='1', help='train use gpu')
+    parser.add_argument('--gpu_id', type=str, default='0', help='train use gpu')
     parser.add_argument('--train_root', type=str, default='./data/TrainDataset/Kvasir-SEG/',
                         help='the training rgb images root')
     parser.add_argument('--val_root', type=str, default='./data/ValDataset/Kvasir-SEG/',
@@ -152,7 +159,9 @@ if __name__ == '__main__':
     opt = parser.parse_args()
 
     # set the device for training
-    if opt.gpu_id == '0':
+    if not TRAIN_ON_GPU:
+        print('USE CPU')
+    elif opt.gpu_id == '0':
         os.environ["CUDA_VISIBLE_DEVICES"] = "0"
         print('USE GPU 0')
     elif opt.gpu_id == '1':
@@ -161,7 +170,10 @@ if __name__ == '__main__':
     cudnn.benchmark = True
 
     # build the model
-    model = PraNet(channel=32).cuda()
+    if TRAIN_ON_GPU:
+        model = PraNet(channel=32).cuda()
+    else:
+        model = PraNet(channel=32)
 
     if opt.load is not None:
         model.load_state_dict(torch.load(opt.load))
