@@ -7,6 +7,9 @@ import numpy as np
 from PIL import ImageEnhance
 
 
+SEED = 0
+
+
 # several data augumentation strategies
 def cv_random_flip(img, label):
     # left right flip
@@ -53,7 +56,7 @@ def colorEnhance(image):
 def randomGaussian(image, mean=0.1, sigma=0.35):
     def gaussianNoisy(im, mean=mean, sigma=sigma):
         for _i in range(len(im)):
-            im[_i] += random.gauss(mean, sigma)
+            im[_i] = im[_i] + random.gauss(mean, sigma)
         return im
 
     img = np.asarray(image)
@@ -88,15 +91,15 @@ class PolypObjDataset(data.Dataset):
         self.trainsize = trainsize
         # get filenames
         self.images = [image_root + f for f in os.listdir(image_root) if f.endswith('.jpg')]
-        self.gts = [gt_root + f for f in os.listdir(gt_root) if f.endswith('.jpg')
-                    or f.endswith('.png')]
+        self.gts = [gt_root + f for f in os.listdir(gt_root) if f.endswith('.jpg') or f.endswith('.png')]
         # self.grads = [grad_root + f for f in os.listdir(grad_root) if f.endswith('.jpg')
         #               or f.endswith('.png')]
         # self.depths = [depth_root + f for f in os.listdir(depth_root) if f.endswith('.bmp')
         #                or f.endswith('.png')]
         # sorted files
-        self.images = sorted(self.images)
-        self.gts = sorted(self.gts)
+        splitter = TrainValidationSplitter(length=len(self.images), seed=SEED)
+        self.images = splitter.get_training_set(complete_list=sorted(self.images))
+        self.gts = splitter.get_training_set(complete_list=sorted(self.gts))
         # self.grads = sorted(self.grads)
         # self.depths = sorted(self.depths)
         # filter mathcing degrees of files
@@ -175,8 +178,9 @@ class test_dataset:
         self.images = [image_root + f for f in os.listdir(image_root) if f.endswith('.jpg')]
         self.gts = [gt_root + f for f in os.listdir(gt_root) if f.endswith('.jpg')
                     or f.endswith('.png')]
-        self.images = sorted(self.images)
-        self.gts = sorted(self.gts)
+        splitter = TrainValidationSplitter(length=len(self.images), seed=SEED)
+        self.images = splitter.get_validation_set(complete_list=sorted(self.images))
+        self.gts = splitter.get_validation_set(complete_list=sorted(self.gts))
         self.transform = transforms.Compose([
             transforms.Resize((self.testsize, self.testsize)),
             transforms.ToTensor(),
@@ -199,7 +203,7 @@ class test_dataset:
         if name.endswith('.jpg'):
             name = name.split('.jpg')[0] + '.png'
 
-        self.index += 1
+        self.index = self.index + 1
         self.index = self.index % self.size
 
         return image, gt, name, np.array(image_for_post)
@@ -216,3 +220,24 @@ class test_dataset:
 
     def __len__(self):
         return self.size
+
+
+class TrainValidationSplitter:
+    def __init__(self, length: int, train_ratio: float = 0.9, seed: int = 0):
+        if not (0 < train_ratio < 1):
+            raise ValueError('Incorrect Train Ration')
+        self._length = length
+        np.random.seed(seed)
+        idxs = list(range(length))
+        np.random.shuffle(idxs)
+        self._training_idx, self._validation_idx = idxs[:int(train_ratio*length)], idxs[int(train_ratio*length):]
+
+    def get_training_set(self, complete_list: list):
+        if len(complete_list) != self._length:
+            raise ValueError('Size of the input list in incorrect')
+        return [complete_list[i] for i in self._training_idx]
+
+    def get_validation_set(self, complete_list: list):
+        if len(complete_list) != self._length:
+            raise ValueError('Size of the input list in incorrect')
+        return [complete_list[i] for i in self._validation_idx]
