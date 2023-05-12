@@ -26,12 +26,12 @@ The file tree structure is described here:
 
     MediaEval2020-IIAI-Med
     ├── data
-    │   ├── TestDataset
-    │   │   └── MedicoPolypSeg
-    │   ├── TrainDataset
-    │         │   └── Kvasir-SEG
+    │         ├── TestDataset
+    │         │    └── MedicoPolypSeg
+    │         ├── TrainDataset
+    │         │    └── Kvasir-SEG
     │         └── ValDataset
-    │             └── Kvasir-SEG
+    │              └── Kvasir-SEG
     ├── img
     │         └── introduction.png
     ├── lib
