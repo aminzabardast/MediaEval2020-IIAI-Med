@@ -115,9 +115,9 @@ our original paper ([Project](https://link.springer.com/chapter/10.1007%2F978-3-
 [Chinese Traslation](http://dpfan.net/wp-content/uploads/MICCAI20_PraNet_Chinese.pdf), and
 [Code](https://github.com/DengPingFan/PraNet)). For more questions, please feel free to contact me via gepengai.ji@gmail.com.
 
-# Fork Related Notes:
+## 5. Fork Related Notes:
 
-## DockerFile for Easy Reproduction
+### DockerFile for Easy Reproduction
 
 Creating the correct CUDA environment for Deep Learning is challenging.
 Docker containers should be used for these purposes.
