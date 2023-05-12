@@ -144,7 +144,7 @@ class PraNet(nn.Module):
 
         # ---- reverse attention branch_4 ----
         crop_4 = F.interpolate(ra5_feat, scale_factor=0.25, mode='bilinear')
-        x = -1*(torch.sigmoid(crop_4)) + 1
+        x = (-1*(torch.sigmoid(crop_4))) + 1
         x = x.expand(-1, 2048, -1, -1).mul(x4)
         x = self.ra4_conv1(x)
         x = F.relu(self.ra4_conv2(x))
@@ -156,7 +156,7 @@ class PraNet(nn.Module):
 
         # ---- reverse attention branch_3 ----
         crop_3 = F.interpolate(x, scale_factor=2, mode='bilinear')
-        x = -1*(torch.sigmoid(crop_3)) + 1
+        x = (-1*(torch.sigmoid(crop_3))) + 1
         x = x.expand(-1, 1024, -1, -1).mul(x3)
         x = self.ra3_conv1(x)
         x = F.relu(self.ra3_conv2(x))
@@ -167,7 +167,7 @@ class PraNet(nn.Module):
 
         # ---- reverse attention branch_2 ----
         crop_2 = F.interpolate(x, scale_factor=2, mode='bilinear')
-        x = -1*(torch.sigmoid(crop_2)) + 1
+        x = (-1*(torch.sigmoid(crop_2))) + 1
         x = x.expand(-1, 512, -1, -1).mul(x2)
         x = self.ra2_conv1(x)
         x = F.relu(self.ra2_conv2(x))
